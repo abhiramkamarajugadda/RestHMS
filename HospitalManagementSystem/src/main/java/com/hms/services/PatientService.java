@@ -1,6 +1,7 @@
 package com.hms.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -17,22 +18,22 @@ public class PatientService {
 	}
 
 	public Patient savePatient(Patient patient) {
-		// TODO Auto-generated method stub
 		return repository.save(patient);
 	}
 
 	public List<Patient> getAllPAtients() {
-		// TODO Auto-generated method stub
 		return repository.findAll();
 	}
 
-	public Patient searchPatient(Integer id) {
-		// TODO Auto-generated method stub
-		return repository.findById(id).orElse(new Patient());
+	public Optional<Patient> searchPatient(Integer id) {
+		return id == null ? Optional.empty() : repository.findById(id);
+	}
+
+	public boolean exists(Integer id) {
+		return id != null && repository.existsById(id);
 	}
 
 	public void deletePatient(Integer id) {
-		// TODO Auto-generated method stub
 		repository.deleteById(id);
 	}
 	

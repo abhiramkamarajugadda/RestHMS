@@ -1,5 +1,6 @@
 package com.hms.controller;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -15,62 +16,61 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hms.model.Doctor;
 import com.hms.services.DoctorService;
+
+/**
+ * Doctor REST API.
+ * 200 OK for reads and updates, 201 Created (with a Location header) for creates,
+ * 204 No Content for deletes, 404 Not Found for unknown ids and 400 for a missing id on update.
+ */
 @RestController
 @RequestMapping("/api/hms/doctors")
 public class DoctorController {
-	private DoctorService service;
+	private final DoctorService service;
 
 	public DoctorController(DoctorService service) {
-		super();
 		this.service = service;
 	}
+
 	@PostMapping
-	public ResponseEntity<?> saveDoctor(@RequestBody Doctor doctor){
-		Doctor obj = service.saveDoctor(doctor);
-		if(obj !=null) {
-			return new ResponseEntity<>("Doctor added successfully.......",HttpStatus.ACCEPTED);
-		}else {
-			return new ResponseEntity<>("Error in adding doctor.....",HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-	@GetMapping
-	public ResponseEntity<?> getAllDoctors(){
-		List<Doctor> docList=service.getAllDoctors();
-		if(docList.size()!=0) {
-			return new ResponseEntity<> (docList,HttpStatus.FOUND);
-		}
-		else {
-			return new ResponseEntity<> (docList,HttpStatus.NO_CONTENT);
-		}
-	}
-	@GetMapping("/{id}")
-	public ResponseEntity<?> searchDoctor(@PathVariable Integer id){
-		Doctor doctor = service.searchDoctor(id);
-		if(doctor.getId()!=0) {
-			return new ResponseEntity<> (doctor,HttpStatus.FOUND);
-		}else {
-			return new ResponseEntity<>("Invalid doctor id.......",HttpStatus.NOT_FOUND);
-		}
-	}
-	@PutMapping
-	public ResponseEntity<?> updateDoctor(@RequestBody Doctor doctor){
-		Doctor obj = service.searchDoctor(doctor.getId());
-		if(obj.getId()!=null) {
-			service.saveDoctor(doctor);
-			return new ResponseEntity<> ("Doctor Updated Successfully....",HttpStatus.OK);
-		}else {
-			return new ResponseEntity<>("Invalid doctor id.......",HttpStatus.BAD_REQUEST);
-		}
-	}
-	@DeleteMapping("/{id}")
-	public ResponseEntity<?> deleteDoctor(@PathVariable Integer id){
-		Doctor doctor = service.searchDoctor(id);
-		if(doctor.getId()!=0) {
-			service.deleteDoctor(id);
-			return new ResponseEntity<> ("doctor deleted Successfully.....",HttpStatus.FOUND);
-		}else {
-			return new ResponseEntity<>("Invalid doctor id.......",HttpStatus.NOT_FOUND);
-		}
+	public ResponseEntity<Doctor> saveDoctor(@RequestBody Doctor doctor) {
+		doctor.setId(null);
+		Doctor saved = service.saveDoctor(doctor);
+		return ResponseEntity.created(URI.create("/api/hms/doctors/" + saved.getId())).body(saved);
 	}
 
+	@GetMapping
+	public ResponseEntity<List<Doctor>> getAllDoctors() {
+		return ResponseEntity.ok(service.getAllDoctors());
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<?> searchDoctor(@PathVariable Integer id) {
+		return service.searchDoctor(id)
+				.<ResponseEntity<?>>map(ResponseEntity::ok)
+				.orElseGet(() -> notFound(id));
+	}
+
+	@PutMapping
+	public ResponseEntity<?> updateDoctor(@RequestBody Doctor doctor) {
+		if (doctor.getId() == null) {
+			return ResponseEntity.badRequest().body("The doctor id is required for an update.");
+		}
+		if (!service.exists(doctor.getId())) {
+			return notFound(doctor.getId());
+		}
+		return ResponseEntity.ok(service.saveDoctor(doctor));
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteDoctor(@PathVariable Integer id) {
+		if (!service.exists(id)) {
+			return notFound(id);
+		}
+		service.deleteDoctor(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	private ResponseEntity<?> notFound(Integer id) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Doctor with id " + id + " was not found.");
+	}
 }

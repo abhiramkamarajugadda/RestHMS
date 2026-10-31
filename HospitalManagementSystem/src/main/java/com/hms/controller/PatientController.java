@@ -1,5 +1,6 @@
 package com.hms.controller;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -13,68 +14,63 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hms.model.Doctor;
 import com.hms.model.Patient;
 import com.hms.services.PatientService;
 
+/**
+ * Patient REST API.
+ * 200 OK for reads and updates, 201 Created (with a Location header) for creates,
+ * 204 No Content for deletes, 404 Not Found for unknown ids and 400 for a missing id on update.
+ */
 @RestController
 @RequestMapping("/api/hms/patients")
 public class PatientController {
-	private PatientService service;
+	private final PatientService service;
 
 	public PatientController(PatientService service) {
-		super();
 		this.service = service;
 	}
 
 	@PostMapping
-	public ResponseEntity<?> savePatient(@RequestBody Patient patient) {
-		Patient obj = service.savePatient(patient);
-		if (obj != null) {
-			return new ResponseEntity<>("Patient added successfully...", HttpStatus.ACCEPTED);
-		} else {
-			return new ResponseEntity<>("Error in adding patient details.....", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+	public ResponseEntity<Patient> savePatient(@RequestBody Patient patient) {
+		patient.setId(null);
+		Patient saved = service.savePatient(patient);
+		return ResponseEntity.created(URI.create("/api/hms/patients/" + saved.getId())).body(saved);
 	}
 
 	@GetMapping
-	public ResponseEntity<?> getAllPAtients() {
-		List<Patient> patList = service.getAllPAtients();
-		if (patList.size() != 0) {
-			return new ResponseEntity<>(patList, HttpStatus.FOUND);
-		} else {
-			return new ResponseEntity<>(patList, HttpStatus.NO_CONTENT);
-
-		}
+	public ResponseEntity<List<Patient>> getAllPAtients() {
+		return ResponseEntity.ok(service.getAllPAtients());
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<?> searchPatient(@PathVariable Integer id) {
-		Patient patient = service.searchPatient(id);
-		if (patient.getId() != 0) {
-			return new ResponseEntity<>(patient, HttpStatus.FOUND);
-		} else {
-			return new ResponseEntity<>("Patient id not found.....", HttpStatus.NOT_FOUND);
-		}
+		return service.searchPatient(id)
+				.<ResponseEntity<?>>map(ResponseEntity::ok)
+				.orElseGet(() -> notFound(id));
 	}
+
 	@PutMapping
-	public ResponseEntity<?> updatePatient(@RequestBody Patient patient){
-		Patient obj = service.searchPatient(patient.getId());
-		if(obj.getId()!=null) {
-			service.savePatient(patient);
-			return new ResponseEntity<> ("Patient Updated Successfully....",HttpStatus.OK);
-		}else {
-			return new ResponseEntity<>("Invalid patient id.......",HttpStatus.BAD_REQUEST);
+	public ResponseEntity<?> updatePatient(@RequestBody Patient patient) {
+		if (patient.getId() == null) {
+			return ResponseEntity.badRequest().body("The patient id is required for an update.");
 		}
+		if (!service.exists(patient.getId())) {
+			return notFound(patient.getId());
+		}
+		return ResponseEntity.ok(service.savePatient(patient));
 	}
+
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> deletePatient(@PathVariable Integer id){
-		Patient patient = service.searchPatient(id);
-		if(patient.getId()!=0) {
-			service.deletePatient(id);
-			return new ResponseEntity<> ("patient deleted Successfully.....",HttpStatus.FOUND);
-		}else {
-			return new ResponseEntity<>("Invalid patient id.......",HttpStatus.NOT_FOUND);
+	public ResponseEntity<?> deletePatient(@PathVariable Integer id) {
+		if (!service.exists(id)) {
+			return notFound(id);
 		}
+		service.deletePatient(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	private ResponseEntity<?> notFound(Integer id) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Patient with id " + id + " was not found.");
 	}
 }

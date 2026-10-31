@@ -1,5 +1,7 @@
 # RestHMS: Hospital Management REST API
 
+[![CI](https://github.com/abhiramkamarajugadda/RestHMS/actions/workflows/ci.yml/badge.svg)](https://github.com/abhiramkamarajugadda/RestHMS/actions/workflows/ci.yml)
+
 A Spring Boot REST API that manages doctors and patients, with a one-to-many Doctor to Patient relationship in MySQL and Swagger UI documentation.
 
 ## Features
@@ -7,7 +9,8 @@ A Spring Boot REST API that manages doctors and patients, with a one-to-many Doc
 - Full CRUD for doctors and for patients (10 endpoints)
 - Patients are assigned to a doctor through a `@ManyToOne` foreign key (`doctor_id`)
 - `@JsonIgnore` on the doctor's patient list to avoid recursive JSON
-- `ResponseEntity` responses with explicit HTTP status codes
+- REST status codes: 201 Created with a `Location` header, 200 OK, 204 No Content on delete, 404 Not Found for unknown ids, 400 for an update without an id
+- `@WebMvcTest` controller tests with Mockito, run by GitHub Actions on every push
 - Layered design: controllers, services and repositories
 - Interactive API documentation through Swagger UI (springdoc-openapi)
 
@@ -37,18 +40,18 @@ HospitalManagementSystem/
 
 ## REST API
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/hms/doctors` | Add a doctor |
-| GET | `/api/hms/doctors` | List all doctors |
-| GET | `/api/hms/doctors/{id}` | Get a doctor by id |
-| PUT | `/api/hms/doctors` | Update a doctor (JSON body with `id`) |
-| DELETE | `/api/hms/doctors/{id}` | Delete a doctor |
-| POST | `/api/hms/patients` | Add a patient |
-| GET | `/api/hms/patients` | List all patients |
-| GET | `/api/hms/patients/{id}` | Get a patient by id |
-| PUT | `/api/hms/patients` | Update a patient (JSON body with `id`) |
-| DELETE | `/api/hms/patients/{id}` | Delete a patient |
+| Method | Endpoint | Description | Status |
+|---|---|---|---|
+| POST | `/api/hms/doctors` | Add a doctor | 201 Created |
+| GET | `/api/hms/doctors` | List all doctors | 200 OK |
+| GET | `/api/hms/doctors/{id}` | Get a doctor by id | 200 OK, 404 Not Found |
+| PUT | `/api/hms/doctors` | Update a doctor (JSON body with `id`) | 200 OK, 400 without `id`, 404 unknown `id` |
+| DELETE | `/api/hms/doctors/{id}` | Delete a doctor | 204 No Content, 404 Not Found |
+| POST | `/api/hms/patients` | Add a patient | 201 Created |
+| GET | `/api/hms/patients` | List all patients | 200 OK |
+| GET | `/api/hms/patients/{id}` | Get a patient by id | 200 OK, 404 Not Found |
+| PUT | `/api/hms/patients` | Update a patient (JSON body with `id`) | 200 OK, 400 without `id`, 404 unknown `id` |
+| DELETE | `/api/hms/patients/{id}` | Delete a patient | 204 No Content, 404 Not Found |
 
 Sample patient body:
 
@@ -91,6 +94,15 @@ cd RestHMS/HospitalManagementSystem
    ```
 4. API base: `http://localhost:7000/api/hms`
    Swagger UI: `http://localhost:7000/swagger-ui/index.html`
+
+## Tests
+
+```bash
+cd HospitalManagementSystem
+mvn -B verify
+```
+
+Runs 11 tests (controller tests with `@WebMvcTest` and `@MockitoBean`, plus a context test on an in-memory H2 database), so no MySQL is needed. GitHub Actions runs the same command on JDK 21 for every push.
 
 ## Author
 
