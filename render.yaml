@@ -1,0 +1,13 @@
+# Render Blueprint: New > Blueprint > pick this repo. No database or secrets needed:
+# the demo profile runs on in-memory H2 with sample data that resets on restart.
+services:
+  - type: web
+    name: resthms
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /v3/api-docs
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo

@@ -4,6 +4,12 @@
 
 A Spring Boot REST API that manages doctors and patients, with a one-to-many Doctor to Patient relationship in MySQL and Swagger UI documentation.
 
+## Live Demo
+
+**Live link:** _coming soon (Render free tier)_ (opens Swagger UI, where every endpoint can be tried in the browser)
+
+The demo runs on an in-memory H2 database seeded with 4 sample doctors and 8 sample patients (fictional). Anything you add or delete resets when the server restarts. The free server sleeps when idle, so the first visit can take about a minute to wake up.
+
 ## Features
 
 - Full CRUD for doctors and for patients (10 endpoints)
@@ -12,7 +18,8 @@ A Spring Boot REST API that manages doctors and patients, with a one-to-many Doc
 - REST status codes: 201 Created with a `Location` header, 200 OK, 204 No Content on delete, 404 Not Found for unknown ids, 400 for an update without an id
 - `@WebMvcTest` controller tests with Mockito, run by GitHub Actions on every push
 - Layered design: controllers, services and repositories
-- Interactive API documentation through Swagger UI (springdoc-openapi)
+- Interactive API documentation through Swagger UI (springdoc-openapi) at `/swagger-ui.html`; the root URL redirects there
+- `demo` profile: in-memory H2 with sample data, so the API runs with no database setup
 
 ## Tech Stack
 
@@ -22,6 +29,9 @@ A Spring Boot REST API that manages doctors and patients, with a one-to-many Doc
 | Framework | Spring Boot 4.1.1, Spring Web MVC (`@RestController`) |
 | Persistence | Spring Data JPA, Hibernate, MySQL (`mysql-connector-j`) |
 | API docs | springdoc-openapi 3.1.0 (Swagger UI) |
+| Demo database | H2 in-memory (`demo` profile) |
+| CI/CD | GitHub Actions (`mvn -B verify` on JDK 21, Docker image build) |
+| Containers | Multi-stage Dockerfile (JDK 21 build, JRE 21 runtime) |
 | Build | Maven (Maven Wrapper included) |
 
 ## Project Structure
@@ -75,25 +85,44 @@ Sample patient body:
 
 ## Getting Started
 
-**Prerequisites:** JDK 21, MySQL 8, Maven (or the included Maven Wrapper: `sh mvnw spring-boot:run`).
+**Prerequisites:** JDK 21 and Maven (or the included Maven Wrapper: `sh mvnw spring-boot:run`). MySQL 8 is only needed for the default profile.
 
 ```bash
 git clone https://github.com/abhiramkamarajugadda/RestHMS.git
 cd RestHMS/HospitalManagementSystem
 ```
 
-1. Create the database: `CREATE DATABASE boothms;`
-2. Set the database credentials as environment variables (`application.properties` reads `${DB_USERNAME:root}` and `${DB_PASSWORD:}`):
-   ```bash
-   export DB_USERNAME=root
-   export DB_PASSWORD=your_mysql_password
-   ```
-3. Run:
-   ```bash
-   mvn spring-boot:run
-   ```
-4. API base: `http://localhost:7000/api/hms`
-   Swagger UI: `http://localhost:7000/swagger-ui/index.html`
+**Quick start, no database (demo profile):**
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+**With MySQL (default profile):** the `boothms` database is created on first run.
+```bash
+export DB_USERNAME=root
+export DB_PASSWORD=your_mysql_password
+mvn spring-boot:run
+```
+
+API base: `http://localhost:7000/api/hms`
+Swagger UI: `http://localhost:7000/swagger-ui.html`
+
+## Running with Docker
+
+```bash
+docker build -t resthms .
+docker run -p 7000:7000 resthms
+```
+
+The image starts in the `demo` profile. To use MySQL instead, pass `-e SPRING_PROFILES_ACTIVE= -e DB_URL=... -e DB_USERNAME=... -e DB_PASSWORD=...`.
+
+## Deploy to Render (free)
+
+No database account or secrets are needed.
+
+1. On [Render](https://render.com) choose **New > Blueprint** and pick this repository. `render.yaml` builds the `Dockerfile` on the free plan.
+2. The only environment variable is `SPRING_PROFILES_ACTIVE=demo` (already in `render.yaml`). Render sets `PORT`.
+3. Deploy, then open `https://<service>.onrender.com/swagger-ui.html`.
 
 ## Tests
 
@@ -102,7 +131,7 @@ cd HospitalManagementSystem
 mvn -B verify
 ```
 
-Runs 11 tests (controller tests with `@WebMvcTest` and `@MockitoBean`, plus a context test on an in-memory H2 database), so no MySQL is needed. GitHub Actions runs the same command on JDK 21 for every push.
+Runs 13 tests (controller tests with `@WebMvcTest` and `@MockitoBean`, a context test, and a `demo` profile test that checks the seed data and the OpenAPI docs), all on in-memory H2, so no MySQL is needed. GitHub Actions runs the same command on JDK 21 and builds the Docker image on every push.
 
 ## Author
 
