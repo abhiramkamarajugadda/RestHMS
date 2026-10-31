@@ -80,7 +80,11 @@ cd RestHMS/HospitalManagementSystem
 ```
 
 1. Create the database: `CREATE DATABASE boothms;`
-2. Set `spring.datasource.username` and `spring.datasource.password` in `src/main/resources/application.properties`.
+2. Set the database credentials as environment variables (`application.properties` reads `${DB_USERNAME:root}` and `${DB_PASSWORD:}`):
+   ```bash
+   export DB_USERNAME=root
+   export DB_PASSWORD=your_mysql_password
+   ```
 3. Run:
    ```bash
    mvn spring-boot:run
