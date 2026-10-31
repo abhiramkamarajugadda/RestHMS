@@ -6,9 +6,11 @@ A Spring Boot REST API that manages doctors and patients, with a one-to-many Doc
 
 ## Live Demo
 
-**Live link:** _coming soon (Render free tier)_ (opens Swagger UI, where every endpoint can be tried in the browser)
+**Live link:** [abhi-resthms.onrender.com](https://abhi-resthms.onrender.com) (opens Swagger UI, where every endpoint can be tried in the browser)
 
-The demo runs on an in-memory H2 database seeded with 4 sample doctors and 8 sample patients (fictional). Anything you add or delete resets when the server restarts. The free server sleeps when idle, so the first visit can take about a minute to wake up.
+> Note: the free server sleeps when idle, so the first visit may take about a minute to wake up.
+
+The demo runs on an in-memory H2 database seeded with 4 sample doctors and 8 sample patients (fictional). Anything you add or delete resets when the server restarts.
 
 ## Features
 
